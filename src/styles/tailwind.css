@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App-wide custom styles */
+:root {
+  --brand: #4b6bff; /* couleur personnalisée */
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f8fafc; /* utilise background-color au lieu de background */
+  color: #0f172a;
+}
