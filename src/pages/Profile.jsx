@@ -1,61 +1,93 @@
-// src/pages/UserProfile.jsx
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import userSuggestion from "../data/UserSuggestion";
+import { addPost } from "../store/postsSlice";
 
-export default function UserProfile() {
-  const { username } = useParams();
+export default function Profile() {
+  const { id } = useParams();
+  const loggedInUser = useSelector(state => state.auth.user);
+  const dispatch = useDispatch();
+  const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
+  const [isEditable, setIsEditable] = useState(false);
 
-  // Cherche dans la liste des suggestions
-  let user = userSuggestion.find((u) => u.username === username);
+  // Determine if this profile is editable or read-only
+  useEffect(() => {
+    // Profile is editable if:
+    // 1. No :id param exists (viewing /profile), OR
+    // 2. :id param matches logged-in user's id
+    const editable = !id || (loggedInUser && loggedInUser.id === id);
+    setIsEditable(editable);
+  }, [id, loggedInUser]);
 
-  // Si pas trouvé, regarde dans localStorage (profil créé au signup)
-  if (!user) {
-    try {
-      const storedProfile = localStorage.getItem("profile");
-      if (storedProfile) {
-        const parsed = JSON.parse(storedProfile);
-        user = {
-          initials: parsed.firstName[0] + parsed.lastName[0],
-          name: parsed.firstName + " " + parsed.lastName,
-          username: "adnanra", // ⚠️ garde ce username fixe pour cohérence
-          location: "Casa",
-          role: parsed.status,
-          joined: "2026",
+  // Fetch user data
+  useEffect(() => {
+    let userData;
+
+    // If no ID param or ID matches logged-in user, show logged-in user's profile
+    if (!id || (loggedInUser && loggedInUser.id === id)) {
+      if (loggedInUser) {
+        userData = {
+          id: loggedInUser.id,
+          initials: (loggedInUser.name?.charAt(0) || "U").toUpperCase() +
+                   (loggedInUser.name?.split(" ")[1]?.charAt(0) || "").toUpperCase(),
+          name: loggedInUser.name || "My Profile",
+          email: loggedInUser.email || "user@example.com",
+          role: "User",
+          location: "Location",
+          joined: new Date(loggedInUser.createdAt).getFullYear(),
+          username: loggedInUser.name?.toLowerCase().replace(/\s/g, "") || "user",
         };
       }
-    } catch (e) {
-      console.warn("Erreur lecture profil localStorage");
+    } else if (id) {
+      // Fetch other user from UserSuggestion data
+      userData = userSuggestion.find(u => u.id === id);
     }
-  }
 
-  // Charger les posts depuis localStorage
-  useEffect(() => {
-    if (user?.username) {
-      const saved = localStorage.getItem("posts_" + user.username); // ✅ cohérent avec Home
+    if (userData) {
+      setUser(userData);
+
+      // Load posts from localStorage
+      const saved = localStorage.getItem("posts_" + userData.username);
       if (saved) {
         setPosts(JSON.parse(saved));
+      } else {
+        setPosts([]);
       }
     }
-  }, [user?.username]);
+  }, [id, loggedInUser]);
 
-  // Ajouter un post
+  // Add post (only for editable profiles)
   const handleAddPost = (e) => {
     e.preventDefault();
-    if (!newPost.trim()) return;
-    const updated = [newPost.trim(), ...posts];
+    if (!newPost.trim() || !isEditable) return;
+
+    const postText = newPost.trim();
+
+    // Add to Redux store for global visibility
+    dispatch(addPost({
+      userId: user.id,
+      userName: user.name,
+      userInitials: user.initials,
+      text: postText,
+    }));
+
+    // Also save to local state and localStorage for profile page
+    const updated = [postText, ...posts];
     setPosts(updated);
-    localStorage.setItem("posts_" + user.username, JSON.stringify(updated)); // ✅ même clé
+    localStorage.setItem("posts_" + user.username, JSON.stringify(updated));
     setNewPost("");
   };
 
-  // Supprimer un post
+  // Delete post (only for editable profiles)
   const handleDeletePost = (index) => {
+    if (!isEditable) return;
+
     const updated = posts.filter((_, i) => i !== index);
     setPosts(updated);
-    localStorage.setItem("posts_" + user.username, JSON.stringify(updated)); // ✅ même clé
+    localStorage.setItem("posts_" + user.username, JSON.stringify(updated));
   };
 
   if (!user) {
@@ -71,47 +103,60 @@ export default function UserProfile() {
             {user.initials}
           </div>
           <div>
-            <h2 className="text-2xl font-bold">{user.name}</h2>
+            <h2 className="text-2xl font-bold">
+              {isEditable ? "My Profile" : user.name}
+            </h2>
             <p className="text-sm text-gray-500">@{user.username}</p>
+            {user.email && <p className="text-sm text-gray-500">{user.email}</p>}
             <p className="text-sm text-gray-500">{user.location}</p>
             <p className="text-sm text-gray-500">{user.role}</p>
             <p className="text-sm text-gray-400">Inscrit en {user.joined}</p>
+            {!isEditable && (
+              <p className="text-xs text-blue-600 mt-2">📖 Read-only profile</p>
+            )}
           </div>
         </div>
 
-        {/* Formulaire pour ajouter un post */}
-        <form onSubmit={handleAddPost} className="space-y-3">
-          <textarea
-            value={newPost}
-            onChange={(e) => setNewPost(e.target.value)}
-            rows="3"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="Écris ton post ici..."
-          />
-          <button
-            type="submit"
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
-          >
-            Publier
-          </button>
-        </form>
+        {/* Post form - only show for editable profiles */}
+        {isEditable && (
+          <form onSubmit={handleAddPost} className="space-y-3 border-t pt-6">
+            <h3 className="text-lg font-semibold">Write a Blog Post</h3>
+            <textarea
+              value={newPost}
+              onChange={(e) => setNewPost(e.target.value)}
+              rows="3"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Share your thoughts..."
+            />
+            <button
+              type="submit"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition"
+            >
+              Publish Post
+            </button>
+          </form>
+        )}
 
-        {/* Liste des posts */}
+        {/* Posts list */}
         <div>
-          <h3 className="text-lg font-semibold mb-4">Posts de {user.name}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {isEditable ? "My Posts" : `Posts by ${user.name}`}
+          </h3>
           {posts.length === 0 ? (
-            <p className="text-gray-500">Aucun post pour le moment.</p>
+            <p className="text-gray-500">No posts yet.</p>
           ) : (
             <div className="space-y-4">
               {posts.map((post, idx) => (
-                <div key={idx} className="bg-gray-50 border rounded-lg p-4 flex justify-between items-center">
-                  <p className="text-gray-700">{post}</p>
-                  <button
-                    onClick={() => handleDeletePost(idx)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    Supprimer
-                  </button>
+                <div key={idx} className="bg-gray-50 border rounded-lg p-4 flex justify-between items-start">
+                  <p className="text-gray-700 flex-1">{post}</p>
+                  {isEditable && (
+                    <button
+                      onClick={() => handleDeletePost(idx)}
+                      className="text-red-600 hover:text-red-800 text-sm ml-4 whitespace-nowrap"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

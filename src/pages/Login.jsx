@@ -1,13 +1,18 @@
 import React, {useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import { motion } from 'framer-motion'
 import { feedbackVariant } from '../utils/animateVariants'
 import { validateEmail } from '../utils/validators'
 import authService from '../services/authService'
+import { login as loginAction } from '../store/authSlice'
 
 export default function Login(){
   const [form, setForm] = useState({email:'', password:''})
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   async function handleSubmit(e){
     e.preventDefault()
@@ -17,8 +22,9 @@ export default function Login(){
 
     try{
       setLoading(true)
-      await authService.login(form)
-      // tu peux ajouter navigate('/profile') ici si tu veux rediriger après connexion
+      const user = await authService.login(form)
+      dispatch(loginAction(user))
+      navigate('/profile')
     }catch(err){
       setError(err?.message || 'Erreur connexion')
     }finally{setLoading(false)}

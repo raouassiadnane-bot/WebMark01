@@ -1,5 +1,8 @@
-// src/data/UserSuggestion.js
-const userSuggestion = [
+// src/data/mockUsers.js
+// This is an alternative to UserSuggestion.js with the same data structure
+// You can use either file depending on your preference
+
+const mockUsers = [
   {
     id: "1",
     initials: "SJ",
@@ -142,4 +145,4 @@ const userSuggestion = [
   },
 ];
 
-export default userSuggestion;
+export default mockUsers;

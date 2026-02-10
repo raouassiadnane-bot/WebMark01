@@ -5,7 +5,7 @@ import { Provider } from 'react-redux'
 import App from './App'
 import ReactDOM from "react-dom/client";
 
-import store from './store/store'
+import store from './Redux/store'
 import './styles/tailwind.css'
 import "./main.css"
 

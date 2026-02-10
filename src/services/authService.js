@@ -1,26 +1,34 @@
-import api from './api'
+// Mock authentication service
+const authService = {
+  login: async (credentials) => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-const AUTH_PATH = '/auth' // adjust depending on MockAPI routes
+    // Validate credentials exist
+    if (!credentials.email || !credentials.password) {
+      throw new Error('Email and password required');
+    }
 
-const register = async ({name,email,password}) => {
-  // MockAPI: create a user resource
-  const res = await api.post('/users', {name,email,password,verified:false})
-  return res.data
-}
+    // Return a fake user object
+    const user = {
+      id: Math.random().toString(36).substr(2, 9),
+      email: credentials.email,
+      name: credentials.email.split('@')[0],
+      createdAt: new Date().toISOString(),
+    };
 
-const login = async ({email,password}) => {
-  // Mock behaviour: search user and return token stub
-  const res = await api.get('/users', { params: { email } })
-  const user = res.data?.[0]
-  if(!user || user.password !== password) throw new Error('Identifiants invalides')
-  const token = 'mock-token-' + user.id
-  localStorage.setItem('token', token)
-  return { user, token }
-}
+    return user;
+  },
 
-const getProfile = async () => {
-  // Example: fetch current user; in mock, find by token
-  return null
-}
+  logout: async () => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-export default { register, login, getProfile }
+    // Clear any stored tokens or user data if needed
+    localStorage.removeItem('authToken');
+
+    return { success: true };
+  },
+};
+
+export default authService;
