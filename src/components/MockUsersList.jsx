@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import userSuggestion from "../data/UserSuggestion";
+import userApi from "../api/userApi";
 
 /**
  * MockUsersList Component
@@ -9,6 +9,28 @@ import userSuggestion from "../data/UserSuggestion";
  * Usage: <MockUsersList />
  */
 export default function MockUsersList() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await userApi.getUsers();
+        if (mounted) setUsers(data);
+      } catch (e) {
+        if (mounted) setError(e.message || 'Failed to load users');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -18,9 +40,12 @@ export default function MockUsersList() {
           <p className="text-blue-100">Click on any profile to view their details and posts (read-only)</p>
         </div>
 
+        {loading && <div className="text-white">Loading profiles…</div>}
+        {error && <div className="text-yellow-100 bg-yellow-700 p-2 rounded mb-4">{error}</div>}
+
         {/* Users Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {userSuggestion.map((user) => (
+          {users.map((user) => (
             <Link key={user.id} to={`/user/${user.id}`}>
               <div className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-6 h-full">
                 {/* Avatar */}

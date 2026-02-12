@@ -8,6 +8,7 @@ import UserProfile from './pages/UserProfile';
 import VerifyEmail from './pages/VerifyEmail';
 import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
+import ApiUsersExample from './components/ApiUsersExample';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/profile" element={<ProtectedRoute><MotionWrapper><Profile /></MotionWrapper></ProtectedRoute>} />
             <Route path="/user/:id" element={<ProtectedRoute><MotionWrapper><UserProfile /></MotionWrapper></ProtectedRoute>} />
             <Route path="/verify-email" element={<MotionWrapper><VerifyEmail /></MotionWrapper>} />
+            <Route path="/api-users" element={<MotionWrapper><ApiUsersExample /></MotionWrapper>} />
             <Route path="/profile-suggestion" element={<MotionWrapper><ProfileSuggestion /></MotionWrapper>} />
             <Route path="/contact" element={<MotionWrapper><Contact /></MotionWrapper>} />
             <Route path="*" element={<MotionWrapper><NotFound /></MotionWrapper>} />
