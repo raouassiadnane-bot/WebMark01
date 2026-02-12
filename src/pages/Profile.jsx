@@ -1,166 +1,173 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import userSuggestion from "../data/UserSuggestion";
+import { Link } from "react-router-dom";
 import { addPost } from "../store/postsSlice";
 
 export default function Profile() {
-  const { id } = useParams();
   const loggedInUser = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
-  const [isEditable, setIsEditable] = useState(false);
 
-  // Determine if this profile is editable or read-only
+  // Load user profile from Redux state (backed by localStorage)
   useEffect(() => {
-    // Profile is editable if:
-    // 1. No :id param exists (viewing /profile), OR
-    // 2. :id param matches logged-in user's id
-    const editable = !id || (loggedInUser && loggedInUser.id === id);
-    setIsEditable(editable);
-  }, [id, loggedInUser]);
-
-  // Fetch user data
-  useEffect(() => {
-    let userData;
-
-    // If no ID param or ID matches logged-in user, show logged-in user's profile
-    if (!id || (loggedInUser && loggedInUser.id === id)) {
-      if (loggedInUser) {
-        userData = {
-          id: loggedInUser.id,
-          initials: (loggedInUser.name?.charAt(0) || "U").toUpperCase() +
-                   (loggedInUser.name?.split(" ")[1]?.charAt(0) || "").toUpperCase(),
-          name: loggedInUser.name || "My Profile",
-          email: loggedInUser.email || "user@example.com",
-          role: "User",
-          location: "Location",
-          joined: new Date(loggedInUser.createdAt).getFullYear(),
-          username: loggedInUser.name?.toLowerCase().replace(/\s/g, "") || "user",
-        };
-      }
-    } else if (id) {
-      // Fetch other user from UserSuggestion data
-      userData = userSuggestion.find(u => u.id === id);
-    }
-
-    if (userData) {
-      setUser(userData);
-
+    if (loggedInUser) {
+      setUser(loggedInUser);
       // Load posts from localStorage
-      const saved = localStorage.getItem("posts_" + userData.username);
+      const key = "posts_" + (loggedInUser.username || loggedInUser.id);
+      const saved = localStorage.getItem(key);
       if (saved) {
         setPosts(JSON.parse(saved));
-      } else {
-        setPosts([]);
       }
     }
-  }, [id, loggedInUser]);
+  }, [loggedInUser]);
 
-  // Add post (only for editable profiles)
+  // Add post
   const handleAddPost = (e) => {
     e.preventDefault();
-    if (!newPost.trim() || !isEditable) return;
+    if (!newPost.trim() || !user) return;
 
     const postText = newPost.trim();
 
-    // Add to Redux store for global visibility
+    // Add to Redux store for global visibility (shows on Home feed)
     dispatch(addPost({
       userId: user.id,
       userName: user.name,
       userInitials: user.initials,
+      userAvatar: user.avatar,
       text: postText,
     }));
 
-    // Also save to local state and localStorage for profile page
+    // Save to local state and localStorage for profile page
     const updated = [postText, ...posts];
     setPosts(updated);
-    localStorage.setItem("posts_" + user.username, JSON.stringify(updated));
+    const key = "posts_" + (user.username || user.id);
+    localStorage.setItem(key, JSON.stringify(updated));
     setNewPost("");
   };
 
-  // Delete post (only for editable profiles)
+  // Delete post
   const handleDeletePost = (index) => {
-    if (!isEditable) return;
-
     const updated = posts.filter((_, i) => i !== index);
     setPosts(updated);
-    localStorage.setItem("posts_" + user.username, JSON.stringify(updated));
+    const key = "posts_" + (user.username || user.id);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   if (!user) {
-    return <div className="p-6 text-center text-red-600">Utilisateur introuvable</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-700 to-indigo-800 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-xl p-8 text-center">
+          <p className="text-red-600 text-lg font-semibold">Utilisateur introuvable</p>
+          <Link to="/login" className="mt-4 inline-block text-purple-600 hover:underline">→ Se connecter</Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-700 to-indigo-800 px-4 py-10 text-gray-800">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-xl p-8 space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-4">
-          <div className="bg-purple-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-xl font-bold">
-            {user.initials}
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold">
-              {isEditable ? "My Profile" : user.name}
-            </h2>
-            <p className="text-sm text-gray-500">@{user.username}</p>
-            {user.email && <p className="text-sm text-gray-500">{user.email}</p>}
-            <p className="text-sm text-gray-500">{user.location}</p>
-            <p className="text-sm text-gray-500">{user.role}</p>
-            <p className="text-sm text-gray-400">Inscrit en {user.joined}</p>
-            {!isEditable && (
-              <p className="text-xs text-blue-600 mt-2">📖 Read-only profile</p>
-            )}
-          </div>
-        </div>
+      <div className="max-w-3xl mx-auto">
+        {/* Back to feed */}
+        <Link to="/" className="inline-flex items-center text-white/80 hover:text-white mb-6 transition">
+          <span className="mr-2">←</span> Retour au feed
+        </Link>
 
-        {/* Post form - only show for editable profiles */}
-        {isEditable && (
+        <div className="bg-white rounded-xl shadow-xl p-8 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 text-center md:text-left">
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="rounded-full w-24 h-24 object-cover border-4 border-purple-200 shadow-md"
+              />
+            ) : (
+              <div className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full w-24 h-24 flex items-center justify-center text-3xl font-bold shadow-md">
+                {user.initials || "?"}
+              </div>
+            )}
+
+            <div className="flex-1">
+              <h2 className="text-3xl font-bold text-gray-900">{user.name || "Mon Profil"}</h2>
+              <p className="text-gray-500 font-medium text-lg">@{user.username}</p>
+
+              {/* Display Onboarding Quiz Results */}
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start mt-3">
+                {user.role && (
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+                    {user.role}
+                  </span>
+                )}
+                {user.experience && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                    {user.experience}
+                  </span>
+                )}
+                {user.goal && (
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                    Goal: {user.goal}
+                  </span>
+                )}
+              </div>
+
+              {user.bio && (
+                <p className="text-gray-600 mt-4 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100 italic">
+                  "{user.bio}"
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-500 justify-center md:justify-start">
+                <span className="flex items-center"><span className="mr-1">📧</span> {user.email}</span>
+                <span className="flex items-center"><span className="mr-1">📍</span> {user.location || "Earth"}</span>
+                <span className="flex items-center"><span className="mr-1">📅</span> Inscrit en {user.joined || new Date().getFullYear()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Post form */}
           <form onSubmit={handleAddPost} className="space-y-3 border-t pt-6">
-            <h3 className="text-lg font-semibold">Write a Blog Post</h3>
+            <h3 className="text-lg font-semibold">Écrire un post</h3>
             <textarea
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
               rows="3"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Share your thoughts..."
+              placeholder="Partagez vos idées..."
             />
             <button
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition shadow-md"
             >
-              Publish Post
+              Publier
             </button>
           </form>
-        )}
 
-        {/* Posts list */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4">
-            {isEditable ? "My Posts" : `Posts by ${user.name}`}
-          </h3>
-          {posts.length === 0 ? (
-            <p className="text-gray-500">No posts yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post, idx) => (
-                <div key={idx} className="bg-gray-50 border rounded-lg p-4 flex justify-between items-start">
-                  <p className="text-gray-700 flex-1">{post}</p>
-                  {isEditable && (
+          {/* Posts list */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Mes posts</h3>
+            {posts.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                <p>Aucun post pour le moment.</p>
+                <p className="text-sm mt-1">Écrivez votre premier post ci-dessus !</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post, idx) => (
+                  <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-start hover:shadow-md transition">
+                    <p className="text-gray-700 flex-1 whitespace-pre-wrap">{post}</p>
                     <button
                       onClick={() => handleDeletePost(idx)}
-                      className="text-red-600 hover:text-red-800 text-sm ml-4 whitespace-nowrap"
+                      className="text-red-600 hover:text-red-800 text-xs uppercase font-bold ml-4 border p-1 rounded hover:bg-red-50 transition"
                     >
-                      Delete
+                      Supprimer
                     </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

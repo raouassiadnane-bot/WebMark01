@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { login as loginAction } from '../store/authSlice';
 
 export default function Signup() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [age, setAge] = useState('');
-  const [status, setStatus] = useState('Étudiant');
+  // Status removed from here as it's now part of onboarding rol
+  // const [status, setStatus] = useState('Étudiant'); 
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // ✅ toggle
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
@@ -17,6 +22,11 @@ export default function Signup() {
 
     if (!firstName.trim() || !lastName.trim()) {
       setError('Veuillez entrer votre prénom et nom.');
+      return;
+    }
+
+    if (!email.trim() || !email.includes('@')) {
+      setError('Veuillez entrer un email valide.');
       return;
     }
 
@@ -31,22 +41,41 @@ export default function Signup() {
       return;
     }
 
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+    const initials = (firstName.trim()[0] + lastName.trim()[0]).toUpperCase();
+    const username = (firstName.trim() + lastName.trim()).toLowerCase().replace(/\s/g, '');
+
     const profile = {
+      id: 'local-' + Date.now(),
+      name: fullName,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      email: email.trim(),
       age: ageNum,
-      status,
-      password, // ✅ stocker le mot de passe (exemple)
+      // status, // Will be set in onboarding
+      initials,
+      username,
+      // role: status, // Will be set in onboarding
+      location: 'Morocco 🇲🇦',
+      joined: new Date().getFullYear().toString(),
+      bio: `👋 Hello! I'm ${fullName}. New on WebMark!`, // Initial bio, can be updated in onboarding
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName.trim()}`,
+      createdAt: new Date().toISOString(),
     };
 
     try {
       localStorage.setItem('profile', JSON.stringify(profile));
-      localStorage.setItem('onboarded', 'true');
+      // localStorage.setItem('onboarded', 'true'); // REMOVED: Do not mark as onboarded yet!
+      localStorage.removeItem('onboarded'); // Ensure it's cleared
     } catch (e) {
       console.warn('Erreur stockage local');
     }
 
-    navigate('/verify-email'); // étape suivante
+    // Dispatch login to Redux so the user is authenticated
+    dispatch(loginAction(profile));
+
+    // Go to Onboarding page instead of Home
+    navigate('/onboarding');
   };
 
   return (
@@ -90,6 +119,18 @@ export default function Signup() {
             />
           </div>
 
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="votre.email@example.com"
+            />
+          </div>
+
           {/* Âge */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Âge (optionnel)</label>
@@ -103,20 +144,7 @@ export default function Signup() {
             />
           </div>
 
-          {/* Statut */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Statut</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            >
-              <option>Étudiant</option>
-              <option>Professionnel</option>
-            </select>
-          </div>
-
-          {/* ✅ Mot de passe */}
+          {/* Mot de passe */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
             <div className="relative">
@@ -143,7 +171,7 @@ export default function Signup() {
               type="submit"
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition duration-200"
             >
-              Valider l'inscription
+              Suivant
             </button>
           </div>
         </form>

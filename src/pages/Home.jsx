@@ -42,6 +42,7 @@ function seededRandom(seed) {
 
 export default function Home() {
   const reduxPosts = useSelector(state => state.posts.posts);
+  const user = useSelector(state => state.auth.user);
   const [apiUsers, setApiUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -88,11 +89,14 @@ export default function Home() {
   );
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center px-4">
+    <section className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center px-4 py-12">
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
-        <h2 className="text-3xl font-bold text-gray-800 mb-4 text-center">
-          Bienvenue sur <span className="text-purple-600">WebMark</span>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
+          {user ? `Bienvenue, ${user.firstName || user.name.split(' ')[0]}!` : 'Bienvenue sur WebMark'}
         </h2>
+        <p className="text-gray-500 text-center mb-6">
+          Découvrez ce qui se passe dans votre communauté.
+        </p>
 
         {/* Loading state */}
         {loading && (
