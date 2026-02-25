@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
 import VerifyEmail from './pages/VerifyEmail';
+import ConfirmCode from './pages/ConfirmCode';
 import Signup from './pages/Signup';
 import Onboarding from './pages/Onboarding';
 import NotFound from './pages/NotFound';
@@ -43,6 +44,7 @@ export default function App() {
       const onboarded = localStorage.getItem('onboarded');
       const isAuthPage = ['/signup', '/login'].includes(location.pathname);
       const isOnboardingPage = location.pathname === '/onboarding';
+      const isConfirmPage = location.pathname === '/confirm-code';
 
       if (!saved) {
         // Not logged in -> MUST go to signup (or login)
@@ -50,8 +52,8 @@ export default function App() {
           navigate('/signup');
         }
       } else if (onboarded !== 'true') {
-        // Logged in but not onboarded -> MUST go to onboarding
-        if (!isOnboardingPage) {
+        // Logged in but not onboarded -> allow onboarding or confirm-code pages
+        if (!isOnboardingPage && !isConfirmPage) {
           navigate('/onboarding');
         }
       } else {
@@ -73,6 +75,7 @@ export default function App() {
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<MotionWrapper><Home /></MotionWrapper>} />
             <Route path="/signup" element={<MotionWrapper><Signup /></MotionWrapper>} />
+            <Route path="/confirm-code" element={<MotionWrapper><ConfirmCode /></MotionWrapper>} />
             <Route path="/onboarding" element={<ProtectedRoute><MotionWrapper><Onboarding /></MotionWrapper></ProtectedRoute>} />
             <Route path="/login" element={<MotionWrapper><Login /></MotionWrapper>} />
             <Route path="/profile" element={<ProtectedRoute><MotionWrapper><Profile /></MotionWrapper></ProtectedRoute>} />

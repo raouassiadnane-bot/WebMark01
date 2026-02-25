@@ -3,6 +3,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { addPost } from "../store/postsSlice";
 
+// Lazy-load the AI composer component to keep initial bundle small
+const AIComposer = React.lazy(() => import('../components/PostAssistant'));
+
 export default function Profile() {
   const loggedInUser = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
@@ -126,23 +129,16 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Post form */}
-          <form onSubmit={handleAddPost} className="space-y-3 border-t pt-6">
-            <h3 className="text-lg font-semibold">Écrire un post</h3>
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              rows="3"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Partagez vos idées..."
-            />
-            <button
-              type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition shadow-md"
-            >
-              Publier
-            </button>
-          </form>
+          {/* PostAssistant (AI-assisted post composer) */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Assistant de post (AI)</h3>
+            <div>
+              {/* Lazy-load the component to avoid increasing bundle size excessively. */}
+              <React.Suspense fallback={<div>Chargement de l'assistant...</div>}>
+                <AIComposer />
+              </React.Suspense>
+            </div>
+          </div>
 
           {/* Posts list */}
           <div>

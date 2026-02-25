@@ -72,7 +72,7 @@ export default function Onboarding() {
                         <div className="space-y-4">
                             <label className="block text-lg font-medium text-gray-700">Quel est votre rôle principal ?</label>
                             <div className="space-y-2">
-                                {['Développeur Frontend', 'Développeur Backend', 'Full Stack', 'Designer UI/UX', 'Product Manager', 'Étudiant', 'Autre'].map((option) => (
+                                {['Digital Marketing Specialist', 'Content Marketer', 'Social Media Manager', 'SEO/SEM Specialis', 'Email Marketing Specialist', 'Marketing Analyst', 'Autre'].map((option) => (
                                     <label key={option} className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-purple-50 transition">
                                         <input
                                             type="radio"

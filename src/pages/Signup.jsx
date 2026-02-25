@@ -16,7 +16,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -71,11 +71,39 @@ export default function Signup() {
       console.warn('Erreur stockage local');
     }
 
+    // Trigger n8n webhook for sending confirmation code and wait for response
+    try {
+      const res = await fetch('https://n8n.deontex.com/webhook/signup-webhook?email=' + profile.email, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+       
+      });
+
+      if (res.ok) {
+        const json = await res.json().catch(() => null);
+        // Expecting { code: 'ABC123' } or similar from n8n. Store locally for validation.
+        if (json && json.code) {
+          const expiresAt = Date.now() + 1000 * 60 * 15; // 15 minutes
+          localStorage.setItem('signup_verification', JSON.stringify({
+            email: profile.email,
+            code: json.code,
+            expiresAt,
+          }));
+        }
+      } else {
+        console.warn('Signup webhook returned non-OK:', res.status);
+      }
+    } catch (err) {
+      console.error('Error triggering signup webhook:', err);
+    }
+
     // Dispatch login to Redux so the user is authenticated
     dispatch(loginAction(profile));
 
-    // Go to Onboarding page instead of Home
-    navigate('/onboarding');
+    // Redirect to confirmation code entry (then onboarding after confirmation)
+    navigate('/confirm-code');
   };
 
   return (
