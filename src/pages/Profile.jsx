@@ -50,6 +50,29 @@ export default function Profile() {
     setNewPost("");
   };
 
+  /**
+   * Handles publishing from the AI Composer
+   * @param {string} text - The corrected (or original) text from the AI assistant
+   */
+  const handleAIPublish = (text) => {
+    if (!text.trim() || !user) return;
+
+    // Add to Redux store
+    dispatch(addPost({
+      userId: user.id,
+      userName: user.name,
+      userInitials: user.initials,
+      userAvatar: user.avatar,
+      text: text,
+    }));
+
+    // Update local state and persistence
+    const updated = [text, ...posts];
+    setPosts(updated);
+    const key = "posts_" + (user.username || user.id);
+    localStorage.setItem(key, JSON.stringify(updated));
+  };
+
   // Delete post
   const handleDeletePost = (index) => {
     const updated = posts.filter((_, i) => i !== index);
@@ -134,8 +157,8 @@ export default function Profile() {
             <h3 className="text-lg font-semibold mb-4">Assistant de post (AI)</h3>
             <div>
               {/* Lazy-load the component to avoid increasing bundle size excessively. */}
-              <React.Suspense fallback={<div>Chargement de l'assistant...</div>}>
-                <AIComposer />
+              <React.Suspense fallback={<div className="text-white/50 italic py-4">Chargement de l'assistant...</div>}>
+                <AIComposer onPublish={handleAIPublish} />
               </React.Suspense>
             </div>
           </div>
