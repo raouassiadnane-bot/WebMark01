@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import userApi from '../api/userApi';
+import { correctText } from '../services/textCorrectionService';
 
 // Pool of fake post texts to randomly assign to API users
 const FAKE_POST_TEXTS = [
@@ -46,6 +47,8 @@ export default function Home() {
   const [apiUsers, setApiUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [postContent, setPostContent] = useState("");
+  const [isCorrecting, setIsCorrecting] = useState(false);
 
   // Fetch users from MockAPI
   useEffect(() => {
@@ -88,8 +91,31 @@ export default function Home() {
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
   );
 
+  const handleVerifyPost = async () => {
+    if (!postContent.trim()) {
+      alert("Please write a post before verifying.");
+      return;
+    }
+
+    setIsCorrecting(true);
+    try {
+      const result = await correctText(postContent);
+      if (result.success) {
+        setPostContent(result.correctedText);
+        alert("Post corrected successfully!");
+      } else {
+        alert("Failed to correct the post. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error correcting post:", error);
+      alert("An error occurred while correcting the post.");
+    } finally {
+      setIsCorrecting(false);
+    }
+  };
+
   return (
-    <section className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center px-4 py-12">
+    <section className="min-h-screen bg-linear-to-br from-purple-600 to-indigo-700 flex items-center justify-center px-4 py-12">
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
         <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
           {user ? `Bienvenue, ${user.firstName || user.name.split(' ')[0]}!` : 'Bienvenue sur WebMark'}
@@ -145,6 +171,26 @@ export default function Home() {
               </div>
             ))
           )}
+        </div>
+
+        <textarea
+          value={postContent}
+          onChange={(e) => setPostContent(e.target.value)}
+          placeholder="Write your post here..."
+          className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all duration-200 resize-none min-h-30"
+        />
+
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={handleVerifyPost}
+            disabled={isCorrecting || !postContent.trim()}
+            className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-2 ${isCorrecting || !postContent.trim()
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-linear-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:shadow-purple-200"
+            }`}
+          >
+            {isCorrecting ? "Correcting..." : "Verify Post"}
+          </button>
         </div>
       </div>
     </section>
