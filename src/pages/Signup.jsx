@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { login as loginAction } from '../store/authSlice';
+import { updateField } from '../features/signup/signupSlice';
 
 export default function Signup() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [age, setAge] = useState('');
-  // Status removed from here as it's now part of onboarding rol
-  // const [status, setStatus] = useState('Étudiant'); 
-  const [password, setPassword] = useState('');
+  
+  // Get form data from Redux
+  const { firstName, lastName, email, age, password } = useSelector(state => state.signup);
+  
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
+  // Handle field changes by dispatching Redux action
+  const handleFieldChange = (fieldName, value) => {
+    dispatch(updateField({ fieldName, value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -130,7 +133,7 @@ export default function Signup() {
             <label className="block text-sm font-medium text-gray-700">Prénom</label>
             <input
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => handleFieldChange('firstName', e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               placeholder="Votre prénom"
             />
@@ -141,7 +144,7 @@ export default function Signup() {
             <label className="block text-sm font-medium text-gray-700">Nom</label>
             <input
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => handleFieldChange('lastName', e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               placeholder="Votre nom"
             />
@@ -152,7 +155,7 @@ export default function Signup() {
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => handleFieldChange('email', e.target.value)}
               type="email"
               className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               placeholder="votre.email@example.com"
@@ -164,7 +167,7 @@ export default function Signup() {
             <label className="block text-sm font-medium text-gray-700">Âge (optionnel)</label>
             <input
               value={age}
-              onChange={(e) => setAge(e.target.value)}
+              onChange={(e) => handleFieldChange('age', e.target.value)}
               type="number"
               min="17"
               className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -179,7 +182,7 @@ export default function Signup() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handleFieldChange('password', e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 placeholder="Votre mot de passe"
               />

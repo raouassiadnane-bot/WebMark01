@@ -1,38 +1,41 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login as loginAction } from '../store/authSlice';
+import { updateField, nextStep, prevStep } from '../features/signup/signupSlice';
 
 export default function Onboarding() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector(state => state.auth.user);
-    const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState({
-        role: '',
-        experience: '',
-        goal: '',
-        bio: '',
-    });
+    
+    // Get signup data from Redux
+    const signupState = useSelector(state => state.signup);
+    const { currentStep, totalSteps, role, experience, goal, bio } = signupState;
 
-    const totalSteps = 4;
-
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Handle field changes by dispatching Redux action
+    const handleFieldChange = (fieldName, value) => {
+        dispatch(updateField({ fieldName, value }));
     };
 
-    const nextStep = () => {
-        if (step < totalSteps) setStep(step + 1);
+    const handleNextStep = () => {
+        dispatch(nextStep());
     };
 
-    const prevStep = () => {
-        if (step > 1) setStep(step - 1);
+    const handlePrevStep = () => {
+        dispatch(prevStep());
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Save to profile
-        const updatedUser = { ...user, ...formData };
+        // Combine auth user with signup form data
+        const updatedUser = { 
+            ...user, 
+            role,
+            experience,
+            goal,
+            bio,
+        };
 
         // Update Redux
         dispatch(loginAction(updatedUser));
@@ -63,12 +66,12 @@ export default function Onboarding() {
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
                     <div
                         className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(step / totalSteps) * 100}%` }}
+                        style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                     ></div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    {step === 1 && (
+                    {currentStep === 1 && (
                         <div className="space-y-4">
                             <label className="block text-lg font-medium text-gray-700">Quel est votre rôle principal ?</label>
                             <div className="space-y-2">
@@ -78,8 +81,8 @@ export default function Onboarding() {
                                             type="radio"
                                             name="role"
                                             value={option}
-                                            checked={formData.role === option}
-                                            onChange={handleChange}
+                                            checked={role === option}
+                                            onChange={(e) => handleFieldChange('role', e.target.value)}
                                             className="form-radio text-purple-600"
                                         />
                                         <span>{option}</span>
@@ -89,7 +92,7 @@ export default function Onboarding() {
                         </div>
                     )}
 
-                    {step === 2 && (
+                    {currentStep === 2 && (
                         <div className="space-y-4">
                             <label className="block text-lg font-medium text-gray-700">Quel est votre niveau d'expérience ?</label>
                             <div className="grid grid-cols-1 gap-3">
@@ -99,8 +102,8 @@ export default function Onboarding() {
                                             type="radio"
                                             name="experience"
                                             value={option}
-                                            checked={formData.experience === option}
-                                            onChange={handleChange}
+                                            checked={experience === option}
+                                            onChange={(e) => handleFieldChange('experience', e.target.value)}
                                             className="form-radio text-purple-600"
                                         />
                                         <span>{option}</span>
@@ -110,7 +113,7 @@ export default function Onboarding() {
                         </div>
                     )}
 
-                    {step === 3 && (
+                    {currentStep === 3 && (
                         <div className="space-y-4">
                             <label className="block text-lg font-medium text-gray-700">Quel est votre objectif principal ?</label>
                             <div className="space-y-2">
@@ -120,8 +123,8 @@ export default function Onboarding() {
                                             type="radio"
                                             name="goal"
                                             value={option}
-                                            checked={formData.goal === option}
-                                            onChange={handleChange}
+                                            checked={goal === option}
+                                            onChange={(e) => handleFieldChange('goal', e.target.value)}
                                             className="form-radio text-purple-600"
                                         />
                                         <span>{option}</span>
@@ -131,13 +134,13 @@ export default function Onboarding() {
                         </div>
                     )}
 
-                    {step === 4 && (
+                    {currentStep === 4 && (
                         <div className="space-y-4">
                             <label className="block text-lg font-medium text-gray-700">Dites-nous en plus sur vous (Bio)</label>
                             <textarea
                                 name="bio"
-                                value={formData.bio}
-                                onChange={handleChange}
+                                value={bio}
+                                onChange={(e) => handleFieldChange('bio', e.target.value)}
                                 rows="4"
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 placeholder="Une courte description de qui vous êtes et ce que vous aimez..."
@@ -146,10 +149,10 @@ export default function Onboarding() {
                     )}
 
                     <div className="flex justify-between mt-8">
-                        {step > 1 ? (
+                        {currentStep > 1 ? (
                             <button
                                 type="button"
-                                onClick={prevStep}
+                                onClick={handlePrevStep}
                                 className="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition"
                             >
                                 Précédent
@@ -158,12 +161,12 @@ export default function Onboarding() {
                             <div></div>
                         )}
 
-                        {step < totalSteps ? (
+                        {currentStep < totalSteps ? (
                             <button
                                 type="button"
-                                onClick={nextStep}
-                                disabled={step === 1 && !formData.role || step === 2 && !formData.experience || step === 3 && !formData.goal}
-                                className={`px-6 py-2 rounded-lg text-white font-semibold transition ${(step === 1 && !formData.role || step === 2 && !formData.experience || step === 3 && !formData.goal)
+                                onClick={handleNextStep}
+                                disabled={currentStep === 1 && !role || currentStep === 2 && !experience || currentStep === 3 && !goal}
+                                className={`px-6 py-2 rounded-lg text-white font-semibold transition ${(currentStep === 1 && !role || currentStep === 2 && !experience || currentStep === 3 && !goal)
                                         ? 'bg-gray-300 cursor-not-allowed'
                                         : 'bg-purple-600 hover:bg-purple-700 shadow-md'
                                     }`}
